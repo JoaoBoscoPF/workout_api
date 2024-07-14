@@ -1,29 +1,21 @@
-from typing import Annotated, Optional
-from pydantic import Field, PositiveFloat
-from workout_api.categorias.schemas import CategoriaIn
-from workout_api.centro_treinamento.schemas import CentroTreinamentoAtleta
+from datetime import datetime
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Float
+from sqlalchemy.orm import relationship
+from workout_api.contrib.models import Base, BaseModel
+from sqlalchemy.exc import IntegrityError
 
-from workout_api.contrib.schemas import BaseSchema, OutMixin
+class AtletaModel(BaseModel):
+    __tablename__ = 'atletas'
 
-
-class Atleta(BaseSchema):
-    nome: Annotated[str, Field(description='Nome do atleta', example='Joao', max_length=50)]
-    cpf: Annotated[str, Field(description='CPF do atleta', example='12345678900', max_length=11)]
-    idade: Annotated[int, Field(description='Idade do atleta', example=25)]
-    peso: Annotated[PositiveFloat, Field(description='Peso do atleta', example=75.5)]
-    altura: Annotated[PositiveFloat, Field(description='Altura do atleta', example=1.70)]
-    sexo: Annotated[str, Field(description='Sexo do atleta', example='M', max_length=1)]
-    categoria: Annotated[CategoriaIn, Field(description='Categoria do atleta')]
-    centro_treinamento: Annotated[CentroTreinamentoAtleta, Field(description='Centro de treinamento do atleta')]
-
-
-class AtletaIn(Atleta):
-    pass
-
-
-class AtletaOut(Atleta, OutMixin):
-    pass
-
-class AtletaUpdate(BaseSchema):
-    nome: Annotated[Optional[str], Field(None, description='Nome do atleta', example='Joao', max_length=50)]
-    idade: Annotated[Optional[int], Field(None, description='Idade do atleta', example=25)]
+    pk_id: Column[int] = Column(Integer, primary_key=True)
+    nome: Column[str] = Column(String(50), nullable=False)
+    cpf: Column[str] = Column(String(11), unique=True, nullable=False)
+    idade: Column[int] = Column(Integer, nullable=False)
+    peso: Column[float] = Column(Float, nullable=False)
+    altura: Column[float] = Column(Float, nullable=False)
+    sexo: Column[str] = Column(String(1), nullable=False)
+    created_at: Column[datetime] = Column(DateTime, nullable=False, default=datetime.utcnow)
+    categoria: relationship = relationship("CategoriaModel", back_populates="atleta", lazy='selectin')
+    categoria_id: Column[int] = Column(ForeignKey("categorias.pk_id"))
+    centro_treinamento: relationship = relationship("CentroTreinamentoModel", back_populates="atleta", lazy='selectin')
+    centro_treinamento_id: Column[int] = Column(ForeignKey("centros_treinamento.pk_id"))
